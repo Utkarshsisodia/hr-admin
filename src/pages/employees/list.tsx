@@ -1,13 +1,11 @@
-import { useTable, EditButton, List } from "@refinedev/antd";
+import { useTable, EditButton, DeleteButton, List } from "@refinedev/antd";
 import { Table, Space } from "antd";
 
 export const EmployeeList = () => {
-  // 1. useTable magically talks to Supabase and gets your data
   const { tableProps } = useTable({
-    resource: "employees", // This must match your Supabase table name!
+    resource: "employees",
   });
 
-  // 2. We pass tableProps directly to the Ant Design Table
   return (
     <List>
       <Table {...tableProps} rowKey="id">
@@ -15,17 +13,22 @@ export const EmployeeList = () => {
         <Table.Column dataIndex="last_name" title="Last Name" />
         <Table.Column dataIndex="department" title="Department" />
         <Table.Column dataIndex="role" title="Role" />
+        
+        {/* THIS IS THE NEW COLUMN TO ADD */}
+        <Table.Column
+          title="Actions"
+          dataIndex="actions"
+          render={(_, record) => (
+            <Space>
+              {/* Refine knows automatically to link this to your edit page */}
+              <EditButton hideText size="small" recordItemId={record.id} />
+              
+              {/* Refine handles the delete API call automatically */}
+              <DeleteButton hideText size="small" recordItemId={record.id} />
+            </Space>
+          )}
+        />
       </Table>
-
-      <Table.Column
-        title="Actions"
-        dataIndex="actions"
-        render={(_, record) => (
-          <Space>
-            <EditButton hideText size="small" recordItemId={record.id} />
-          </Space>
-        )}
-      ></Table.Column>
     </List>
   );
 };

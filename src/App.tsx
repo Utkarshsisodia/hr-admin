@@ -25,8 +25,33 @@ import { EmployeeEdit } from "./pages/employees/edit";
 import { Authenticated } from "@refinedev/core";
 import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
 import { Login } from "./pages/auth";
+import { AccessControlProvider } from "@refinedev/core";
 
 function App() {
+  const accessControlProvider: AccessControlProvider = {
+  can: async ({ resource, action }) => {
+    // 1. Get the role
+    const role = await authProvider.getPermissions?.();
+    
+    // DEBUGGING TOOL: Look in your browser console (F12) to see this print out!
+    console.log(`Action: ${action}, Resource: ${resource}, User Role: ${role}`);
+
+    // 2. Protect the Employees resource
+    if (resource === "employees") {
+      // If the action is create, edit, or delete...
+      if (["create", "edit", "delete"].includes(action)) {
+        return {
+          can: role === "admin", // ...only allow if role is EXACTLY 'admin'
+          reason: "Only HR Administrators can modify employee records.",
+        };
+      }
+    }
+
+    // 3. Allow 'list' and 'show' for everyone
+    return { can: true };
+  },
+};
+
   return (
     <BrowserRouter>
       <GitHubBanner />
@@ -39,6 +64,7 @@ function App() {
                 liveProvider={liveProvider(supabaseClient)}
                 authProvider={authProvider}
                 routerProvider={routerProvider}
+                accessControlProvider={accessControlProvider}
                 resources={[
                   {
                     name: "employees",

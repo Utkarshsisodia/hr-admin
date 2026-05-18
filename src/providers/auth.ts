@@ -215,10 +215,15 @@ const authProvider: AuthProvider = {
     };
   },
   getPermissions: async () => {
-    const user = await supabaseClient.auth.getUser();
+    const { data } = await supabaseClient.auth.getUser();
 
-    if (user) {
-      return user.data.user?.role;
+    if (data?.user) {
+      // If the email has "admin" in it, treat them as an Admin. 
+      // Otherwise, they are a standard employee.
+      if (data.user.email?.toLowerCase().includes("admin")) {
+        return "admin";
+      }
+      return "employee";
     }
 
     return null;

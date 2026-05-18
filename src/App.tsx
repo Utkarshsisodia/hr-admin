@@ -16,6 +16,7 @@ import { ColorModeContextProvider } from "./contexts/color-mode";
 import authProvider from "./providers/auth";
 import { dataProvider } from "./providers/data";
 import { supabaseClient } from "./providers/supabase-client";
+import { EmployeeList } from "./pages/employees/list";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
                 liveProvider={liveProvider(supabaseClient)}
                 authProvider={authProvider}
                 routerProvider={routerProvider}
+                resources={[{ name: "employees", list: "/employees", }]}
                 notificationProvider={useNotificationProvider}
                 options={{
                   syncWithLocation: true,
@@ -39,6 +41,7 @@ function App() {
               >
                 <Routes>
                   <Route index element={<WelcomePage />} />
+                  <Route path="/employees" element={<EmployeeList />} />
                 </Routes>
                 <RefineKbar />
                 <UnsavedChangesNotifier />

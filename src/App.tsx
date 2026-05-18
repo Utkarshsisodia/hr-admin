@@ -1,4 +1,4 @@
-import { GitHubBanner, Refine, WelcomePage } from "@refinedev/core";
+import { GitHubBanner, Refine } from "@refinedev/core";
 import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
@@ -17,6 +17,14 @@ import authProvider from "./providers/auth";
 import { dataProvider } from "./providers/data";
 import { supabaseClient } from "./providers/supabase-client";
 import { EmployeeList } from "./pages/employees/list";
+import { ThemedLayout } from "@refinedev/antd";
+import { Outlet } from "react-router";
+import { Header } from "./components/header";
+import { EmployeeCreate } from "./pages/employees/create";
+import { EmployeeEdit } from "./pages/employees/edit";
+import { Authenticated } from "@refinedev/core";
+import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
+import { Login } from "./pages/auth";
 
 function App() {
   return (
@@ -31,7 +39,14 @@ function App() {
                 liveProvider={liveProvider(supabaseClient)}
                 authProvider={authProvider}
                 routerProvider={routerProvider}
-                resources={[{ name: "employees", list: "/employees", }]}
+                resources={[
+                  {
+                    name: "employees",
+                    list: "/employees",
+                    create: "/employees/create",
+                    edit: "/employees/edit/:id",
+                  },
+                ]}
                 notificationProvider={useNotificationProvider}
                 options={{
                   syncWithLocation: true,
@@ -40,8 +55,45 @@ function App() {
                 }}
               >
                 <Routes>
-                  <Route index element={<WelcomePage />} />
-                  <Route path="/employees" element={<EmployeeList />} />
+                  {/* 1. UNAUTHENTICATED ROUTES */}
+                  <Route
+                    element={
+                      <Authenticated
+                        key="authenticated-outer"
+                        fallback={<Outlet />}
+                      >
+                        <NavigateToResource />
+                      </Authenticated>
+                    }
+                  >
+                    <Route path="/login" element={<Login />} />
+                  </Route>
+
+                  {/* 2. AUTHENTICATED (PROTECTED) ROUTES */}
+                  <Route
+                    element={
+                      <Authenticated
+                        key="authenticated-inner"
+                        fallback={<CatchAllNavigate to="/login" />}
+                      >
+                        <ThemedLayout Header={() => <Header sticky />}>
+                          <Outlet />
+                        </ThemedLayout>
+                      </Authenticated>
+                    }
+                  >
+                    {/* Default route redirects to employees */}
+                    <Route
+                      index
+                      element={<NavigateToResource resource="employees" />}
+                    />
+
+                    <Route path="/employees">
+                      <Route index element={<EmployeeList />} />
+                      <Route path="create" element={<EmployeeCreate />} />
+                      <Route path="edit/:id" element={<EmployeeEdit />} />
+                    </Route>
+                  </Route>
                 </Routes>
                 <RefineKbar />
                 <UnsavedChangesNotifier />

@@ -11,14 +11,23 @@ export const EmployeeCreate = () => {
         <Form.Item
           label="First Name"
           name="first_name"
-          rules={[{ required: true }]}
+          rules={[
+            {
+              required: true,
+              message: "Please enter the employee's first name.",
+            },
+            { whitespace: true, message: "First name cannot be empty." },
+          ]}
         >
           <Input />
         </Form.Item>
         <Form.Item
           label="Last Name"
           name="last_name"
-          rules={[{ required: true }]}
+          rules={[
+            { required: true,message:"Please enter the employee's last name." },
+            { whitespace: true, message: "Last name cannot be empty." },
+          ]}
         >
           <Input />
         </Form.Item>

@@ -1,4 +1,4 @@
-import { GitHubBanner, Refine } from "@refinedev/core";
+import { Refine } from "@refinedev/core";
 import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
@@ -26,35 +26,45 @@ import { Authenticated } from "@refinedev/core";
 import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
 import { Login } from "./pages/auth";
 import { AccessControlProvider } from "@refinedev/core";
+import { LeaveList } from "./pages/leaves/list";
+import { LeaveCreate } from "./pages/leaves/create";
+import { Dashboard } from "./pages/dashboard";
+import { DashboardOutlined } from "@ant-design/icons";
 
-function App() {
-  const accessControlProvider: AccessControlProvider = {
+const accessControlProvider: AccessControlProvider = {
   can: async ({ resource, action }) => {
-    // 1. Get the role
+    // 1. Get the cached role (which we optimized in the last step!)
     const role = await authProvider.getPermissions?.();
-    
-    // DEBUGGING TOOL: Look in your browser console (F12) to see this print out!
-    console.log(`Action: ${action}, Resource: ${resource}, User Role: ${role}`);
 
     // 2. Protect the Employees resource
     if (resource === "employees") {
-      // If the action is create, edit, or delete...
       if (["create", "edit", "delete"].includes(action)) {
         return {
-          can: role === "admin", // ...only allow if role is EXACTLY 'admin'
+          can: role === "admin",
           reason: "Only HR Administrators can modify employee records.",
         };
       }
     }
 
-    // 3. Allow 'list' and 'show' for everyone
+    // 3. NEW: Protect the Leave Requests resource
+    if (resource === "leave_requests") {
+      // Only admins can approve, reject, or delete leaves
+      if (["approve_reject", "delete"].includes(action)) {
+        return {
+          can: role === "admin",
+          reason: "Only HR Administrators can approve or reject leaves.",
+        };
+      }
+    }
+
+    // 4. Allow 'list', 'show', and 'create' for everyone (so employees can request leaves!)
     return { can: true };
   },
 };
 
+function App() {
   return (
     <BrowserRouter>
-      <GitHubBanner />
       <RefineKbarProvider>
         <ColorModeContextProvider>
           <AntdApp>
@@ -67,10 +77,24 @@ function App() {
                 accessControlProvider={accessControlProvider}
                 resources={[
                   {
+                    name: "dashboard",
+                    list: "/",
+                    meta: {
+                      label: "Dashboard",
+                      icon: <DashboardOutlined />, // Import this from @ant-design/icons!
+                    },
+                  },
+                  {
                     name: "employees",
                     list: "/employees",
                     create: "/employees/create",
                     edit: "/employees/edit/:id",
+                  },
+                  {
+                    name: "leave_requests",
+                    list: "/leaves",
+                    create: "/leaves/create",
+                    meta: { label: "Leave Management" },
                   },
                 ]}
                 notificationProvider={useNotificationProvider}
@@ -109,15 +133,17 @@ function App() {
                     }
                   >
                     {/* Default route redirects to employees */}
-                    <Route
-                      index
-                      element={<NavigateToResource resource="employees" />}
-                    />
+                    <Route index element={<Dashboard />} />
 
                     <Route path="/employees">
                       <Route index element={<EmployeeList />} />
                       <Route path="create" element={<EmployeeCreate />} />
                       <Route path="edit/:id" element={<EmployeeEdit />} />
+                    </Route>
+
+                    <Route path="/leaves">
+                      <Route index element={<LeaveList />} />
+                      <Route path="create" element={<LeaveCreate />} />
                     </Route>
                   </Route>
                 </Routes>

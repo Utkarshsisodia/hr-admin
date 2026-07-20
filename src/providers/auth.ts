@@ -1,8 +1,6 @@
 import { AuthProvider } from "@refinedev/core";
 import { supabaseClient } from "./supabase-client";
 
-let rolePromise: Promise<string | null> | null = null;
-
 const authProvider: AuthProvider = {
   login: async ({ email, password, providerName }) => {
     // sign in with oauth
@@ -166,9 +164,6 @@ const authProvider: AuthProvider = {
     };
   },
   logout: async () => {
-    // 3. Clear the promise when they log out!
-    rolePromise = null;
-    
     const { error } = await supabaseClient.auth.signOut();
     if (error) {
       return { success: false, error };
@@ -212,20 +207,11 @@ const authProvider: AuthProvider = {
     };
   },
   getPermissions: async () => {
-    // 1. If a request is already in flight (or finished), share it! 
-    if (rolePromise) {
-      return rolePromise; 
+    const { data } = await supabaseClient.auth.getUser();
+    if (data?.user) {
+      return data.user.email?.toLowerCase().includes("admin") ? "admin" : "employee";
     }
-
-    // 2. Start the fetch, but save the active Promise so all 20 buttons share the exact same network request
-    rolePromise = supabaseClient.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        return data.user.email?.toLowerCase().includes("admin") ? "admin" : "employee";
-      }
-      return null;
-    });
-
-    return rolePromise;
+    return null;
   },
   getIdentity: async () => {
     const { data } = await supabaseClient.auth.getUser();

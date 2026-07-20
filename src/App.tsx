@@ -1,8 +1,6 @@
 import { Refine } from "@refinedev/core";
-import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
-import { useNotificationProvider } from "@refinedev/antd";
+import { useNotificationProvider, AuthPage } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
 
 import routerProvider, {
@@ -10,9 +8,15 @@ import routerProvider, {
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
 import { liveProvider } from "@refinedev/supabase";
-import { App as AntdApp } from "antd";
+import { App as AntdApp, ConfigProvider, theme as antdTheme } from "antd";
 import { BrowserRouter, Route, Routes } from "react-router";
-import { ColorModeContextProvider } from "./contexts/color-mode";
+import React, { useState, createContext, useMemo } from "react";
+
+export const ThemeContext = createContext({
+  mode: "light",
+  toggleMode: () => {},
+});
+
 import authProvider from "./providers/auth";
 import { dataProvider } from "./providers/data";
 import { supabaseClient } from "./providers/supabase-client";
@@ -63,99 +67,99 @@ const accessControlProvider: AccessControlProvider = {
 };
 
 function App() {
+  const [mode, setMode] = useState("light");
+  const toggleMode = () => setMode(m => m === "light" ? "dark" : "light");
+  const { defaultAlgorithm, darkAlgorithm } = antdTheme;
+
   return (
     <BrowserRouter>
-      <RefineKbarProvider>
-        <ColorModeContextProvider>
+      <ThemeContext.Provider value={{ mode, toggleMode }}>
+        <ConfigProvider theme={{ algorithm: mode === "light" ? defaultAlgorithm : darkAlgorithm }}>
           <AntdApp>
-            <DevtoolsProvider>
-              <Refine
-                dataProvider={dataProvider}
-                liveProvider={liveProvider(supabaseClient)}
-                authProvider={authProvider}
-                routerProvider={routerProvider}
-                accessControlProvider={accessControlProvider}
-                resources={[
-                  {
-                    name: "dashboard",
-                    list: "/",
-                    meta: {
-                      label: "Dashboard",
-                      icon: <DashboardOutlined />, // Import this from @ant-design/icons!
-                    },
-                  },
-                  {
-                    name: "employees",
-                    list: "/employees",
-                    create: "/employees/create",
-                    edit: "/employees/edit/:id",
-                  },
-                  {
-                    name: "leave_requests",
-                    list: "/leaves",
-                    create: "/leaves/create",
-                    meta: { label: "Leave Management" },
-                  },
-                ]}
-                notificationProvider={useNotificationProvider}
-                options={{
-                  syncWithLocation: true,
-                  warnWhenUnsavedChanges: true,
-                  projectId: "ooxMh1-0BQBLt-A6BpBM",
-                }}
-              >
-                <Routes>
-                  {/* 1. UNAUTHENTICATED ROUTES */}
-                  <Route
-                    element={
-                      <Authenticated
-                        key="authenticated-outer"
-                        fallback={<Outlet />}
-                      >
-                        <NavigateToResource />
-                      </Authenticated>
-                    }
-                  >
-                    <Route path="/login" element={<Login />} />
-                  </Route>
+        <Refine
+          dataProvider={dataProvider}
+          liveProvider={liveProvider(supabaseClient)}
+          authProvider={authProvider}
+          routerProvider={routerProvider}
+          accessControlProvider={accessControlProvider}
+          resources={[
+            {
+              name: "dashboard",
+              list: "/",
+              meta: {
+                label: "Dashboard",
+                icon: <DashboardOutlined />, // Import this from @ant-design/icons!
+              },
+            },
+            {
+              name: "employees",
+              list: "/employees",
+              create: "/employees/create",
+              edit: "/employees/edit/:id",
+            },
+            {
+              name: "leave_requests",
+              list: "/leaves",
+              create: "/leaves/create",
+              meta: { label: "Leave Management" },
+            },
+          ]}
+          notificationProvider={useNotificationProvider}
+          options={{
+            syncWithLocation: true,
+            warnWhenUnsavedChanges: true,
+            projectId: "ooxMh1-0BQBLt-A6BpBM",
+          }}
+        >
+          <Routes>
+            {/* 1. UNAUTHENTICATED ROUTES */}
+            <Route
+              element={
+                <Authenticated key="authenticated-outer" fallback={<Outlet />}>
+                  <NavigateToResource />
+                </Authenticated>
+              }
+            >
+              <Route path="/login" element={<Login />} />
+            </Route>
 
-                  {/* 2. AUTHENTICATED (PROTECTED) ROUTES */}
-                  <Route
-                    element={
-                      <Authenticated
-                        key="authenticated-inner"
-                        fallback={<CatchAllNavigate to="/login" />}
-                      >
-                        <ThemedLayout Header={() => <Header sticky />}>
-                          <Outlet />
-                        </ThemedLayout>
-                      </Authenticated>
-                    }
-                  >
-                    {/* Default route redirects to employees */}
-                    <Route index element={<Dashboard />} />
+            <Route
+              path="/register"
+              element={<AuthPage type="register" title="HR Admin Portal" />}
+            />
 
-                    <Route path="/employees">
-                      <Route index element={<EmployeeList />} />
-                      <Route path="create" element={<EmployeeCreate />} />
-                      <Route path="edit/:id" element={<EmployeeEdit />} />
-                    </Route>
+            {/* 2. AUTHENTICATED (PROTECTED) ROUTES */}
+            <Route
+              element={
+                <Authenticated
+                  key="authenticated-inner"
+                  fallback={<CatchAllNavigate to="/login" />}
+                >
+                  <ThemedLayout Header={() => <Header sticky />}>
+                    <Outlet />
+                  </ThemedLayout>
+                </Authenticated>
+              }
+            >
+              {/* Default route redirects to employees */}
+              <Route index element={<Dashboard />} />
 
-                    <Route path="/leaves">
-                      <Route index element={<LeaveList />} />
-                      <Route path="create" element={<LeaveCreate />} />
-                    </Route>
-                  </Route>
-                </Routes>
-                <RefineKbar />
-                <UnsavedChangesNotifier />
-                <DocumentTitleHandler />
-              </Refine>
-              <DevtoolsPanel />
-            </DevtoolsProvider>
-          </AntdApp>
-        </ColorModeContextProvider>
-      </RefineKbarProvider>
+              <Route path="/employees">
+                <Route index element={<EmployeeList />} />
+                <Route path="create" element={<EmployeeCreate />} />
+                <Route path="edit/:id" element={<EmployeeEdit />} />
+              </Route>
+
+              <Route path="/leaves">
+                <Route index element={<LeaveList />} />
+                <Route path="create" element={<LeaveCreate />} />
+              </Route>
+            </Route>
+          </Routes>
+        </Refine>
+      </AntdApp>
+      </ConfigProvider>
+      </ThemeContext.Provider>
     </BrowserRouter>
   );
 }

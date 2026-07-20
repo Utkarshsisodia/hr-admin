@@ -28,3 +28,14 @@ _.ntvs_
 _.njsproj
 _.sln
 \*.sw?
+
+# Skills
+.agents
+.cursor
+.claudecode
+.codex
+.deep-agents
+.gemini
+.github-copilot
+.kilocode
+skills-lock.json

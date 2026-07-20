@@ -7,8 +7,8 @@ export const Login = () => {
       title="HR Admin Portal"
       formProps={{
         initialValues: {
-          email: "admin@demo.com",
-          password: "password", // You can remove these later, just helpful for testing!
+          email: "admin@test.com",
+          password: "password", // Make sure this matches what you set!
         },
       }}
     />
